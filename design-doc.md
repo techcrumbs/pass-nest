@@ -118,7 +118,29 @@ Conceptual flow:
 3. Derived key unwraps the vault key
 4. Vault key encrypts and decrypts saved password entries
 
+This means the user-chosen master password is not used directly as an AES key. Instead, the KDF strengthens the password and turns it into a fixed-size cryptographic key suitable for protecting the vault key.
+
 ## Encryption Flow
+
+### Encryption Metadata Terms
+
+#### `iv_nonce`
+
+`iv_nonce` is the random per-encryption input used by `AES-256-GCM` when encrypting a password entry.
+
+It is stored alongside the ciphertext because it is required for decryption later. It does not need to be secret, but it must be unique for each encryption operation performed with the same key.
+
+In practice, each saved password entry stores:
+
+- `ciphertext`: the encrypted password value
+- `iv_nonce`: the random input used during encryption
+- `auth_tag`: the integrity tag produced by `AES-256-GCM`
+
+#### `auth_tag`
+
+`auth_tag` is the authentication tag produced by `AES-256-GCM`.
+
+It allows the app to verify that the encrypted value has not been modified or corrupted before returning the decrypted password. During decryption, the app uses the stored `ciphertext`, `iv_nonce`, `auth_tag`, and the in-memory vault key together.
 
 ### First-Time Setup
 
@@ -239,6 +261,17 @@ On Linux, secure storage quality can vary depending on the available secret serv
 - OS secure storage integration
 - IPC request validation
 
+`IPC` stands for Inter-Process Communication.
+
+In Electron, the main process is the privileged process that can access Node.js APIs, SQLite, cryptographic services, and the operating system. The renderer process is the UI process. The renderer must ask the main process to perform privileged work through IPC instead of accessing those systems directly.
+
+`IPC request validation` means the main process validates every renderer request before doing work such as:
+
+- confirming required fields are present
+- rejecting malformed input
+- rejecting actions when the vault is locked
+- limiting renderer access to only the approved API surface
+
 ### Preload Responsibilities
 
 - Expose a minimal safe API to the renderer
@@ -255,6 +288,20 @@ Example API surface:
 - `copyPassword(entryId)`
 - `unlockVault(masterPassword)`
 - `enableTrustedDeviceUnlock()`
+
+### Example Request Flow
+
+When a user clicks the copy icon in the UI, the request should flow like this:
+
+1. Renderer calls a preload API such as `copyPassword(entryId)`
+2. Preload forwards the request through Electron IPC
+3. Main process IPC handler validates the request
+4. Main process loads the encrypted entry from SQLite
+5. Main process decrypts the password using the in-memory vault key
+6. Main process writes the plaintext password to the clipboard
+7. Main process returns success to the renderer
+
+This keeps database access, decryption, and clipboard handling inside the privileged main process.
 
 ### Renderer Responsibilities
 
@@ -316,3 +363,49 @@ The next design artifact should be a technical implementation spec covering:
 - IPC contract definitions
 - unlock state machine
 - crypto helper interfaces
+
+## Glossary
+
+### `auth_tag`
+
+The integrity value produced by `AES-256-GCM` during encryption. It is used during decryption to detect tampering or corruption.
+
+### `ciphertext`
+
+The encrypted form of a password value stored in SQLite instead of plaintext.
+
+### `IPC`
+
+Short for Inter-Process Communication. In Electron, IPC is how the renderer asks the privileged main process to perform actions such as database access, decryption, and clipboard operations.
+
+### `iv_nonce`
+
+The random input used during an encryption operation. It is stored with the ciphertext and must be unique per encryption under the same key.
+
+### `KDF`
+
+Short for Key Derivation Function. A KDF turns a human password plus a salt and parameters into a cryptographic key suitable for protecting other secrets.
+
+### `main process`
+
+The privileged Electron process that can access Node.js APIs, the filesystem, SQLite, clipboard services, and OS secure storage.
+
+### `master password`
+
+The password chosen by the user to unlock the vault. It is not stored in plaintext and is used to derive a key that unwraps the vault key.
+
+### `preload`
+
+The Electron script that safely exposes a narrow API from the main process to the renderer.
+
+### `renderer`
+
+The Electron UI process that renders the app interface. It should not directly access SQLite, cryptographic services, or raw Node.js APIs.
+
+### `trusted-device unlock`
+
+An optional convenience feature that uses OS secure storage to reduce repeated master password prompts on machines with a trustworthy secure storage backend.
+
+### `vault key`
+
+The random symmetric key used to encrypt and decrypt saved password entries. It is the primary data-encryption key for the vault.
