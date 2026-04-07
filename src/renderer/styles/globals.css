@@ -1,0 +1,244 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f1e8;
+  --surface: rgba(255, 250, 243, 0.88);
+  --surface-strong: #fffdf9;
+  --border: rgba(84, 57, 31, 0.15);
+  --text: #2b1f17;
+  --muted: #6d5947;
+  --accent: #8c4f2a;
+  --accent-strong: #6f3413;
+  --danger: #9d2f2f;
+  --shadow: 0 24px 60px rgba(62, 41, 24, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(220, 154, 102, 0.25), transparent 34%),
+    linear-gradient(180deg, #f9f4ed 0%, #f0e7dc 100%);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.hero h1 {
+  margin: 0 0 10px;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+}
+
+.panel,
+.card,
+.entry-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.panel,
+.card {
+  padding: 20px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row.spread {
+  justify-content: space-between;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-row {
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.entry-meta h3,
+.panel h2,
+.card h2,
+.card h3 {
+  margin: 0;
+}
+
+.entry-meta p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.tag {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(140, 79, 42, 0.11);
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+input,
+select,
+button,
+textarea {
+  font: inherit;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--text);
+}
+
+button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 16px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: rgba(111, 52, 19, 0.1);
+  color: var(--accent-strong);
+}
+
+button.danger {
+  background: rgba(157, 47, 47, 0.12);
+  color: var(--danger);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.message {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(140, 79, 42, 0.09);
+  color: var(--accent-strong);
+}
+
+.error {
+  background: rgba(157, 47, 47, 0.11);
+  color: var(--danger);
+}
+
+.checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox input {
+  width: auto;
+  min-height: auto;
+}
+
+.locked-screen,
+.setup-screen {
+  max-width: 540px;
+  margin: 64px auto 0;
+}
+
+@media (max-width: 900px) {
+  #app {
+    padding: 18px;
+  }
+
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    flex-direction: column;
+  }
+}

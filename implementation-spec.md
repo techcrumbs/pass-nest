@@ -14,6 +14,15 @@ This spec assumes:
 - Master password required at setup
 - Optional trusted-device unlock only when OS secure storage is trustworthy
 
+## Current Bootstrap Variant
+
+The first implementation slice is using Node built-ins where practical to reduce Electron native-module friction during initial scaffolding:
+
+- SQLite access: `node:sqlite`
+- Password-based KDF in code today: `scrypt`
+
+The security design target still prefers `Argon2id` for the master-password KDF. Once the Electron packaging toolchain is stable, we can evaluate whether moving to an Argon2id dependency is worth the added native-module complexity.
+
 ## MVP Decisions
 
 The following product and implementation choices are fixed for v1:
@@ -36,7 +45,7 @@ pass-nest/
         app-paths.ts
         init-app.ts
       crypto/
-        argon2.ts
+        kdf.ts
         vault-crypto.ts
         vault-session.ts
       db/
@@ -308,7 +317,7 @@ type EntryRecord = {
 ```ts
 type VaultMetadataRecord = {
   vaultId: string;
-  kdfAlgorithm: 'argon2id';
+  kdfAlgorithm: string;
   kdfParamsJson: string;
   kdfSalt: Buffer;
   wrappedVaultKey: Buffer;
@@ -351,11 +360,12 @@ type Argon2Params = {
 Initial target:
 
 ```ts
-const DEFAULT_ARGON2_PARAMS = {
-  memoryCostKiB: 19456,
-  timeCost: 2,
-  parallelism: 1,
-  hashLength: 32,
+const DEFAULT_KDF_PARAMS = {
+  algorithm: 'scrypt',
+  cost: 16384,
+  blockSize: 8,
+  parallelization: 1,
+  keyLength: 32,
 } as const;
 ```
 

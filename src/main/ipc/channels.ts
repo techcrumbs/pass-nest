@@ -1,0 +1,16 @@
+export const IPC_CHANNELS = {
+  appGetBootstrapStatus: 'app:getBootstrapStatus',
+  vaultSetup: 'vault:setup',
+  vaultUnlock: 'vault:unlock',
+  vaultLock: 'vault:lock',
+  vaultGetStatus: 'vault:getStatus',
+  vaultSetTrustedDeviceUnlock: 'vault:setTrustedDeviceUnlock',
+  profilesList: 'profiles:list',
+  profilesCreate: 'profiles:create',
+  profilesUpdate: 'profiles:update',
+  profilesDelete: 'profiles:delete',
+  entriesListByProfile: 'entries:listByProfile',
+  entriesCreate: 'entries:create',
+  entriesDelete: 'entries:delete',
+  entriesCopyPassword: 'entries:copyPassword',
+} as const;
