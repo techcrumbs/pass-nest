@@ -1,5 +1,6 @@
 export const IPC_CHANNELS = {
   appGetBootstrapStatus: 'app:getBootstrapStatus',
+  appCopyText: 'app:copyText',
   vaultSetup: 'vault:setup',
   vaultUnlock: 'vault:unlock',
   vaultLock: 'vault:lock',
@@ -11,6 +12,7 @@ export const IPC_CHANNELS = {
   profilesDelete: 'profiles:delete',
   entriesListByProfile: 'entries:listByProfile',
   entriesCreate: 'entries:create',
+  entriesUpdate: 'entries:update',
   entriesDelete: 'entries:delete',
   entriesCopyPassword: 'entries:copyPassword',
 } as const;

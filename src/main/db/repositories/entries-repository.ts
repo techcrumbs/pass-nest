@@ -76,6 +76,38 @@ export class EntriesRepository {
     return this.getDtoById(input.id);
   }
 
+  update(input: {
+    id: string;
+    profileId: string;
+    name: string;
+    tagsJson: string;
+    ciphertext: Buffer;
+    ivNonce: Buffer;
+    authTag: Buffer;
+    keyVersion: number;
+    now: string;
+  }): EntryDto {
+    this.database
+      .prepare(
+        `
+          UPDATE entries
+          SET
+            profile_id = @profileId,
+            name = @name,
+            tags_json = @tagsJson,
+            ciphertext = @ciphertext,
+            iv_nonce = @ivNonce,
+            auth_tag = @authTag,
+            key_version = @keyVersion,
+            updated_at = @now
+          WHERE id = @id
+        `,
+      )
+      .run(input);
+
+    return this.getDtoById(input.id);
+  }
+
   delete(id: string): void {
     this.database.prepare('DELETE FROM entries WHERE id = ?').run(id);
   }

@@ -1,4 +1,8 @@
-import type { EntryDto, CreateEntryInput } from '../shared/dto/entries';
+import type {
+  EntryDto,
+  CreateEntryInput,
+  UpdateEntryInput,
+} from '../shared/dto/entries';
 import type {
   ProfileDto,
   CreateProfileInput,
@@ -14,6 +18,7 @@ import type {
 export type PassNestApi = {
   app: {
     getBootstrapStatus(): Promise<BootstrapStatus>;
+    copyText(input: { value: string }): Promise<{ ok: true }>;
   };
   vault: {
     setup(input: SetupVaultInput): Promise<{ ok: true }>;
@@ -33,6 +38,7 @@ export type PassNestApi = {
   entries: {
     listByProfile(input: { profileId: string }): Promise<EntryDto[]>;
     create(input: CreateEntryInput): Promise<EntryDto>;
+    update(input: UpdateEntryInput): Promise<EntryDto>;
     delete(input: { id: string }): Promise<{ ok: true }>;
     copyPassword(input: { id: string }): Promise<{ ok: true }>;
   };

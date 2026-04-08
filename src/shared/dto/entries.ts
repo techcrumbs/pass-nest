@@ -13,3 +13,11 @@ export type CreateEntryInput = {
   password: string;
   tags: string[];
 };
+
+export type UpdateEntryInput = {
+  id: string;
+  profileId: string;
+  name: string;
+  password?: string;
+  tags: string[];
+};

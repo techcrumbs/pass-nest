@@ -7,6 +7,10 @@ type AppState = {
   profiles: ProfileDto[];
   entries: EntryDto[];
   selectedProfileId: string | null;
+  suggestedMasterPassword: string;
+  showCreateProfileForm: boolean;
+  showCreateEntryForm: boolean;
+  editingEntryId: string | null;
   message: string | null;
   error: string | null;
 };
@@ -24,6 +28,10 @@ const state: AppState = {
   profiles: [],
   entries: [],
   selectedProfileId: null,
+  suggestedMasterPassword: '',
+  showCreateProfileForm: false,
+  showCreateEntryForm: false,
+  editingEntryId: null,
   message: null,
   error: null,
 };
@@ -73,9 +81,13 @@ async function loadEntries(): Promise<void> {
     return;
   }
 
-  state.entries = await window.passNest.entries.listByProfile({
+  const entries = await window.passNest.entries.listByProfile({
     profileId: state.selectedProfileId,
   });
+
+  state.entries = entries.sort((left, right) =>
+    left.name.localeCompare(right.name, undefined, { sensitivity: 'accent' }),
+  );
 }
 
 function render(): void {
@@ -133,12 +145,31 @@ function renderSetupScreen(): string {
         <form id="setup-form" class="stack">
           <label>
             Master password
-            <input id="setup-master-password" name="masterPassword" type="password" minlength="12" required />
+            <input
+              id="setup-master-password"
+              name="masterPassword"
+              type="password"
+              minlength="12"
+              value="${escapeHtml(state.suggestedMasterPassword)}"
+              required
+            />
           </label>
           <label>
             Confirm master password
-            <input id="setup-confirm-password" name="confirmPassword" type="password" minlength="12" required />
+            <input
+              id="setup-confirm-password"
+              name="confirmPassword"
+              type="password"
+              minlength="12"
+              value="${escapeHtml(state.suggestedMasterPassword)}"
+              required
+            />
           </label>
+          <div class="row form-actions">
+            <button id="suggest-master-password-button" class="secondary" type="button">
+              Suggest and copy master password
+            </button>
+          </div>
           <label class="checkbox">
             <input id="setup-trusted-device" name="trustedDevice" type="checkbox" />
             Remember unlock on this device when secure storage supports it
@@ -153,7 +184,7 @@ function renderSetupScreen(): string {
 function renderLockedScreen(): string {
   const note = state.bootstrapStatus?.kind === 'locked' &&
     state.bootstrapStatus.trustedDeviceAvailable
-    ? '<p>Trusted-device unlock is supported on this system, but the vault is currently locked.</p>'
+    ? '<p>This device supports secure local unlock. Enter your master password to open the vault.</p>'
     : '<p>Enter your master password to unlock the vault.</p>';
 
   return `
@@ -174,9 +205,41 @@ function renderLockedScreen(): string {
 }
 
 function renderUnlockedScreen(): string {
+  if (state.profiles.length === 0) {
+    return `
+      <section class="card first-profile-screen">
+        <div class="row spread">
+          <h2>Create your first profile</h2>
+          <button id="lock-vault-button" class="secondary" type="button">Lock</button>
+        </div>
+        <div class="stack">
+          <p>
+            Profiles help you group passwords logically. Start by creating one profile,
+            then you can begin saving password entries inside it.
+          </p>
+          <form id="create-profile-form" class="stack">
+            <label>
+              Profile name
+              <input
+                id="create-profile-name"
+                name="name"
+                type="text"
+                maxlength="80"
+                placeholder="Personal, Work, Finance..."
+                required
+              />
+            </label>
+            <button type="submit">Create profile</button>
+          </form>
+        </div>
+      </section>
+    `;
+  }
+
   const selectedProfile = state.profiles.find(
     (profile) => profile.id === state.selectedProfileId,
   );
+  const editingEntry = state.entries.find((entry) => entry.id === state.editingEntryId) ?? null;
   const profileOptions = state.profiles
     .map(
       (profile) => `
@@ -211,6 +274,7 @@ function renderUnlockedScreen(): string {
                     </div>
                   </div>
                   <div class="row">
+                    <button class="secondary" data-edit-entry-id="${escapeHtml(entry.id)}">Edit</button>
                     <button class="secondary" data-copy-entry-id="${escapeHtml(entry.id)}">Copy</button>
                     <button class="danger" data-delete-entry-id="${escapeHtml(entry.id)}">Delete</button>
                   </div>
@@ -221,83 +285,128 @@ function renderUnlockedScreen(): string {
         </div>
       `;
 
-  return `
-    <section class="panel-grid">
-      <aside class="panel stack">
+  const createProfileMarkup = state.showCreateProfileForm
+    ? `
+      <section class="panel stack inline-form-panel">
         <div class="row spread">
-          <h2>Profiles</h2>
-          <button id="lock-vault-button" class="secondary" type="button">Lock</button>
+          <h2>Create profile</h2>
+          <button id="cancel-create-profile-button" class="secondary" type="button">Close</button>
         </div>
-        <div class="stack">
+        <form id="create-profile-form" class="stack">
           <label>
-            Selected profile
-            <select id="profile-select">
-              ${
-                state.profiles.length === 0
-                  ? '<option value="">No profiles yet</option>'
-                  : profileOptions
-              }
-            </select>
+            Profile name
+            <input id="create-profile-name" name="name" type="text" maxlength="80" placeholder="Personal, Work, Finance..." required />
           </label>
-          <form id="update-profile-form" class="stack">
-            <label>
-              Rename selected profile
-              <input
-                id="update-profile-name"
-                name="name"
-                type="text"
-                maxlength="80"
-                placeholder="Select a profile to rename"
-                value="${selectedProfile ? escapeHtml(selectedProfile.name) : ''}"
-                ${selectedProfile ? '' : 'disabled'}
-                required
-              />
-            </label>
-            <div class="row">
-              <button type="submit" ${selectedProfile ? '' : 'disabled'}>Rename profile</button>
-              <button id="delete-profile-button" class="danger" type="button" ${selectedProfile ? '' : 'disabled'}>Delete profile</button>
-            </div>
-          </form>
-          <form id="create-profile-form" class="stack">
-            <label>
-              New profile
-              <input id="create-profile-name" name="name" type="text" maxlength="80" placeholder="Personal, Work, Finance..." required />
-            </label>
-            <button type="submit">Create profile</button>
-          </form>
-        </div>
-      </aside>
+          <button type="submit">Create profile</button>
+        </form>
+      </section>
+    `
+    : '';
 
-      <section class="stack">
-        <section class="panel stack">
+  const createEntryMarkup = state.showCreateEntryForm
+    ? `
+      <section class="panel stack inline-form-panel">
+        <div class="row spread">
           <h2>Create password entry</h2>
-          <form id="create-entry-form" class="stack">
-            <label>
-              Name
-              <input id="create-entry-name" name="name" type="text" maxlength="120" placeholder="GitHub, Bank, Email..." required />
-            </label>
-            <label>
-              Password value
-              <input id="create-entry-password" name="password" type="password" required />
-            </label>
-            <label>
-              Tags
-              <input id="create-entry-tags" name="tags" type="text" placeholder="infra, personal, backup" />
-            </label>
-            <button type="submit" ${state.selectedProfileId ? '' : 'disabled'}>Save entry</button>
-          </form>
-        </section>
+          <button id="cancel-create-entry-button" class="secondary" type="button">Close</button>
+        </div>
+        <form id="create-entry-form" class="stack">
+          <label>
+            Name
+            <input id="create-entry-name" name="name" type="text" maxlength="120" placeholder="GitHub, Bank, Email..." required />
+          </label>
+          <label>
+            Password value
+            <input id="create-entry-password" name="password" type="password" required />
+          </label>
+          <label>
+            Tags
+            <input id="create-entry-tags" name="tags" type="text" placeholder="infra, personal, backup" />
+          </label>
+          <button type="submit">Save entry</button>
+        </form>
+      </section>
+    `
+    : '';
 
-        <section class="stack">
+  const editEntryMarkup = editingEntry
+    ? `
+      <section class="panel stack inline-form-panel">
+        <div class="row spread">
+          <h2>Edit password entry</h2>
+          <button id="cancel-edit-entry-button" class="secondary" type="button">Close</button>
+        </div>
+        <form id="edit-entry-form" class="stack">
+          <label>
+            Name
+            <input
+              id="edit-entry-name"
+              name="name"
+              type="text"
+              maxlength="120"
+              value="${escapeHtml(editingEntry.name)}"
+              required
+            />
+          </label>
+          <label>
+            New password value
+            <input
+              id="edit-entry-password"
+              name="password"
+              type="password"
+              placeholder="Leave blank to keep the existing password"
+            />
+          </label>
+          <label>
+            Tags
+            <input
+              id="edit-entry-tags"
+              name="tags"
+              type="text"
+              value="${escapeHtml(editingEntry.tags.join(', '))}"
+              placeholder="infra, personal, backup"
+            />
+          </label>
+          <button type="submit">Save changes</button>
+        </form>
+      </section>
+    `
+    : '';
+
+  return `
+    <section class="stack workspace-stack">
+      <section class="panel toolbar-panel">
+        <div class="row spread">
+          <div class="toolbar-profile">
+            <label>
+              Profile
+              <select id="profile-select">
+                ${profileOptions}
+              </select>
+              <span class="toolbar-hint">
+                ${selectedProfile ? `${escapeHtml(selectedProfile.name)} selected` : 'No profile selected'}
+              </span>
+            </label>
+          </div>
+          <div class="row toolbar-actions">
+            <button id="show-create-profile-button" class="secondary" type="button">New profile</button>
+            <button id="show-create-entry-button" type="button">Add password</button>
+            <button id="lock-vault-button" class="secondary" type="button">Lock</button>
+          </div>
+        </div>
+      </section>
+
+      ${createProfileMarkup}
+      ${createEntryMarkup}
+      ${editEntryMarkup}
+
+      <section class="stack password-list-shell">
+        <section class="stack password-list-section">
           <div class="row spread">
             <h2>Passwords</h2>
-            <p>${state.profiles.length} profile(s), ${state.entries.length} visible entry(ies)</p>
+            <p>${state.entries.length} visible entry(ies)</p>
           </div>
-          ${
-            state.profiles.length === 0
-              ? '<div class="card empty">Create your first profile to start saving passwords.</div>'
-              : entriesMarkup
-          }
+          ${entriesMarkup}
         </section>
       </section>
     </section>
@@ -306,9 +415,31 @@ function renderUnlockedScreen(): string {
 
 function wireSetupScreen(): void {
   const form = document.querySelector<HTMLFormElement>('#setup-form');
+  const suggestMasterPasswordButton =
+    document.querySelector<HTMLButtonElement>('#suggest-master-password-button');
+
   if (!form) {
     return;
   }
+
+  suggestMasterPasswordButton?.addEventListener('click', () => {
+    const masterPasswordInput =
+      document.querySelector<HTMLInputElement>('#setup-master-password');
+    const confirmPasswordInput =
+      document.querySelector<HTMLInputElement>('#setup-confirm-password');
+
+    if (!masterPasswordInput || !confirmPasswordInput) {
+      return;
+    }
+
+    const suggestedPassword = generateSuggestedPassword(24);
+    state.suggestedMasterPassword = suggestedPassword;
+    masterPasswordInput.value = suggestedPassword;
+    confirmPasswordInput.value = suggestedPassword;
+    void window.passNest.app.copyText({ value: suggestedPassword });
+    setMessage('Suggested master password copied to clipboard.');
+    render();
+  });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -330,6 +461,7 @@ function wireSetupScreen(): void {
         masterPassword,
         enableTrustedDeviceUnlock,
       });
+      state.suggestedMasterPassword = '';
       state.bootstrapStatus = {
         kind: 'unlocked',
         selectedProfileId: null,
@@ -375,14 +507,22 @@ function wireLockedScreen(): void {
 function wireUnlockedScreen(): void {
   const createProfileForm =
     document.querySelector<HTMLFormElement>('#create-profile-form');
-  const updateProfileForm =
-    document.querySelector<HTMLFormElement>('#update-profile-form');
   const createEntryForm =
     document.querySelector<HTMLFormElement>('#create-entry-form');
+  const editEntryForm =
+    document.querySelector<HTMLFormElement>('#edit-entry-form');
   const profileSelect = document.querySelector<HTMLSelectElement>('#profile-select');
   const lockButton = document.querySelector<HTMLButtonElement>('#lock-vault-button');
-  const deleteProfileButton =
-    document.querySelector<HTMLButtonElement>('#delete-profile-button');
+  const showCreateProfileButton =
+    document.querySelector<HTMLButtonElement>('#show-create-profile-button');
+  const cancelCreateProfileButton =
+    document.querySelector<HTMLButtonElement>('#cancel-create-profile-button');
+  const showCreateEntryButton =
+    document.querySelector<HTMLButtonElement>('#show-create-entry-button');
+  const cancelCreateEntryButton =
+    document.querySelector<HTMLButtonElement>('#cancel-create-entry-button');
+  const cancelEditEntryButton =
+    document.querySelector<HTMLButtonElement>('#cancel-edit-entry-button');
 
   createProfileForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -392,9 +532,8 @@ function wireUnlockedScreen(): void {
       const profile = await window.passNest.profiles.create({
         name: getInputValue('#create-profile-name'),
       });
-      state.profiles = await window.passNest.profiles.list();
-      state.selectedProfileId = state.selectedProfileId ?? profile.id;
-      await loadEntries();
+      state.showCreateProfileForm = false;
+      await refreshProfilesAndSelection(profile.id);
       createProfileForm.reset();
       setMessage(`Profile "${profile.name}" created.`);
     } catch (error) {
@@ -427,6 +566,7 @@ function wireUnlockedScreen(): void {
         password: getRawInputValue('#create-entry-password'),
         tags,
       });
+      state.showCreateEntryForm = false;
       await loadEntries();
       createEntryForm.reset();
       setMessage(`Saved "${entry.name}".`);
@@ -437,23 +577,35 @@ function wireUnlockedScreen(): void {
     render();
   });
 
-  updateProfileForm?.addEventListener('submit', async (event) => {
+  editEntryForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    if (!state.selectedProfileId) {
-      setError('Select a profile to rename.');
+    const editingEntry = state.entries.find((entry) => entry.id === state.editingEntryId);
+    if (!editingEntry) {
+      setError('Select an entry to edit.');
       render();
       return;
     }
 
     try {
       clearMessages();
-      const profile = await window.passNest.profiles.update({
-        id: state.selectedProfileId,
-        name: getInputValue('#update-profile-name'),
+      const tags = getInputValue('#edit-entry-tags')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .filter((value, index, values) => values.indexOf(value) === index);
+      const nextPassword = getRawInputValue('#edit-entry-password');
+
+      const entry = await window.passNest.entries.update({
+        id: editingEntry.id,
+        profileId: editingEntry.profileId,
+        name: getInputValue('#edit-entry-name'),
+        ...(nextPassword ? { password: nextPassword } : {}),
+        tags,
       });
-      await refreshProfilesAndSelection(profile.id);
-      setMessage(`Profile renamed to "${profile.name}".`);
+      state.editingEntryId = null;
+      await loadEntries();
+      setMessage(`Updated "${entry.name}".`);
     } catch (error) {
       setError(toMessage(error));
     }
@@ -468,34 +620,34 @@ function wireUnlockedScreen(): void {
     render();
   });
 
-  deleteProfileButton?.addEventListener('click', async () => {
-    if (!state.selectedProfileId) {
-      return;
-    }
+  showCreateProfileButton?.addEventListener('click', () => {
+    clearMessages();
+    state.showCreateProfileForm = true;
+    state.showCreateEntryForm = false;
+    state.editingEntryId = null;
+    render();
+  });
 
-    const selectedProfile = state.profiles.find(
-      (profile) => profile.id === state.selectedProfileId,
-    );
+  cancelCreateProfileButton?.addEventListener('click', () => {
+    state.showCreateProfileForm = false;
+    render();
+  });
 
-    if (
-      !window.confirm(
-        `Delete profile "${selectedProfile?.name ?? 'selected profile'}" and all passwords in it?`,
-      )
-    ) {
-      return;
-    }
+  showCreateEntryButton?.addEventListener('click', () => {
+    clearMessages();
+    state.showCreateEntryForm = true;
+    state.showCreateProfileForm = false;
+    state.editingEntryId = null;
+    render();
+  });
 
-    const deletingProfileId = state.selectedProfileId;
+  cancelCreateEntryButton?.addEventListener('click', () => {
+    state.showCreateEntryForm = false;
+    render();
+  });
 
-    try {
-      clearMessages();
-      await window.passNest.profiles.delete({ id: deletingProfileId });
-      await refreshProfilesAndSelection();
-      setMessage('Profile deleted.');
-    } catch (error) {
-      setError(toMessage(error));
-    }
-
+  cancelEditEntryButton?.addEventListener('click', () => {
+    state.editingEntryId = null;
     render();
   });
 
@@ -505,6 +657,9 @@ function wireUnlockedScreen(): void {
       await window.passNest.vault.lock();
       state.bootstrapStatus = await window.passNest.app.getBootstrapStatus();
       state.entries = [];
+      state.showCreateEntryForm = false;
+      state.showCreateProfileForm = false;
+      state.editingEntryId = null;
       setMessage('Vault locked.');
     } catch (error) {
       setError(toMessage(error));
@@ -528,6 +683,21 @@ function wireUnlockedScreen(): void {
         setError(toMessage(error));
       }
 
+      render();
+    });
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-edit-entry-id]')) {
+    button.addEventListener('click', () => {
+      const id = button.dataset.editEntryId;
+      if (!id) {
+        return;
+      }
+
+      clearMessages();
+      state.editingEntryId = id;
+      state.showCreateEntryForm = false;
+      state.showCreateProfileForm = false;
       render();
     });
   }
@@ -590,6 +760,13 @@ async function refreshProfilesAndSelection(preferredProfileId?: string): Promise
   }
 
   await loadEntries();
+
+  if (
+    state.editingEntryId &&
+    !state.entries.some((entry) => entry.id === state.editingEntryId)
+  ) {
+    state.editingEntryId = null;
+  }
 }
 
 function getInputValue(selector: string): string {
@@ -613,6 +790,17 @@ function toMessage(error: unknown): string {
   }
 
   return 'Something went wrong.';
+}
+
+function generateSuggestedPassword(length = 20): string {
+  const alphabet =
+    'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+[]{}';
+  const randomValues = new Uint32Array(length);
+  crypto.getRandomValues(randomValues);
+
+  return Array.from(randomValues, (value) => alphabet[value % alphabet.length]).join(
+    '',
+  );
 }
 
 function escapeHtml(value: string): string {

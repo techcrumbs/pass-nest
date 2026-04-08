@@ -85,30 +85,48 @@ body {
   margin-top: -10px;
 }
 
-.shell-unlocked .panel-grid {
+.workspace-stack {
   flex: 1;
   min-height: 0;
+  gap: 16px;
 }
 
-.shell-unlocked .panel-grid > aside,
-.shell-unlocked .panel-grid > section {
-  min-height: 0;
+.toolbar-panel {
+  padding: 16px 20px;
 }
 
-.shell-unlocked .panel-grid > aside {
-  overflow: auto;
+.toolbar-profile {
+  min-width: 280px;
 }
 
-.shell-unlocked .panel-grid > section {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.toolbar-profile label {
+  gap: 6px;
 }
 
-.shell-unlocked .panel-grid > section > .stack:last-child {
+.toolbar-actions {
+  justify-content: flex-end;
+}
+
+.toolbar-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.inline-form-panel {
+  max-width: 640px;
+}
+
+.shell-unlocked > .stack:last-child,
+.workspace-stack > .stack:last-child {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.password-list-shell,
+.password-list-section {
+  flex: 1;
+  min-height: 0;
 }
 
 .panel,
@@ -146,19 +164,21 @@ body {
 .list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .shell-unlocked .list {
   overflow: auto;
   padding-right: 4px;
+  flex: 1;
+  min-height: 0;
 }
 
 .entry-row {
-  padding: 16px 18px;
+  padding: 12px 14px;
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -177,17 +197,17 @@ body {
 
 .tags {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .tag {
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: rgba(140, 79, 42, 0.11);
   color: var(--accent-strong);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .empty {
@@ -223,14 +243,21 @@ select {
 }
 
 button {
-  min-height: 42px;
+  min-height: 38px;
   border: 0;
-  border-radius: 14px;
-  padding: 0 16px;
+  border-radius: 12px;
+  padding: 0 14px;
   background: var(--accent);
   color: white;
   font-weight: 600;
   cursor: pointer;
+}
+
+.entry-row button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
 }
 
 button.secondary {
@@ -283,6 +310,17 @@ button:disabled {
   margin: 12px auto 28px;
 }
 
+.first-profile-screen {
+  max-width: 620px;
+  margin: 24px auto 32px;
+}
+
+.first-profile-screen p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 @media (max-width: 900px) {
   #app {
     height: auto;
@@ -311,5 +349,14 @@ button:disabled {
 
   .shell-auth {
     min-height: auto;
+  }
+
+  .toolbar-actions {
+    justify-content: flex-start;
+  }
+
+  .toolbar-profile {
+    min-width: 0;
+    width: 100%;
   }
 }

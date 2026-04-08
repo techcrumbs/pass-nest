@@ -3,6 +3,7 @@ import type { PassNestApi } from './api-types';
 
 const IPC_CHANNELS = {
   appGetBootstrapStatus: 'app:getBootstrapStatus',
+  appCopyText: 'app:copyText',
   vaultSetup: 'vault:setup',
   vaultUnlock: 'vault:unlock',
   vaultLock: 'vault:lock',
@@ -14,6 +15,7 @@ const IPC_CHANNELS = {
   profilesDelete: 'profiles:delete',
   entriesListByProfile: 'entries:listByProfile',
   entriesCreate: 'entries:create',
+  entriesUpdate: 'entries:update',
   entriesDelete: 'entries:delete',
   entriesCopyPassword: 'entries:copyPassword',
 } as const;
@@ -21,6 +23,7 @@ const IPC_CHANNELS = {
 const api: PassNestApi = {
   app: {
     getBootstrapStatus: () => ipcRenderer.invoke(IPC_CHANNELS.appGetBootstrapStatus),
+    copyText: (input) => ipcRenderer.invoke(IPC_CHANNELS.appCopyText, input),
   },
   vault: {
     setup: (input) => ipcRenderer.invoke(IPC_CHANNELS.vaultSetup, input),
@@ -40,6 +43,7 @@ const api: PassNestApi = {
     listByProfile: (input) =>
       ipcRenderer.invoke(IPC_CHANNELS.entriesListByProfile, input),
     create: (input) => ipcRenderer.invoke(IPC_CHANNELS.entriesCreate, input),
+    update: (input) => ipcRenderer.invoke(IPC_CHANNELS.entriesUpdate, input),
     delete: (input) => ipcRenderer.invoke(IPC_CHANNELS.entriesDelete, input),
     copyPassword: (input) =>
       ipcRenderer.invoke(IPC_CHANNELS.entriesCopyPassword, input),

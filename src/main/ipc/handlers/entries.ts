@@ -10,6 +10,7 @@ import {
   createEntrySchema,
   deleteEntrySchema,
   listEntriesByProfileSchema,
+  updateEntrySchema,
 } from '../../../shared/validation/entries';
 
 export function registerEntryHandlers(input: {
@@ -53,6 +54,43 @@ export function registerEntryHandlers(input: {
       ivNonce: encrypted.iv,
       authTag: encrypted.authTag,
       keyVersion: 1,
+      now: new Date().toISOString(),
+    });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.entriesUpdate, async (_event, payload: unknown) => {
+    const parsed = updateEntrySchema.parse(payload);
+
+    if (!vaultSession.isUnlocked()) {
+      throw new AppError('VAULT_LOCKED', 'Vault is locked.');
+    }
+
+    const existingEntry = entriesRepository.getById(parsed.id);
+    if (!existingEntry) {
+      throw new AppError('ENTRY_NOT_FOUND', 'Entry not found.');
+    }
+
+    const vaultKey = vaultSession.getVaultKeyOrThrow();
+    const encrypted = parsed.password
+      ? encryptEntryPassword({
+          vaultKey,
+          password: parsed.password,
+        })
+      : {
+          ciphertext: existingEntry.ciphertext,
+          iv: existingEntry.iv_nonce,
+          authTag: existingEntry.auth_tag,
+        };
+
+    return entriesRepository.update({
+      id: parsed.id,
+      profileId: parsed.profileId,
+      name: parsed.name,
+      tagsJson: JSON.stringify(parsed.tags),
+      ciphertext: encrypted.ciphertext,
+      ivNonce: encrypted.iv,
+      authTag: encrypted.authTag,
+      keyVersion: existingEntry.key_version,
       now: new Date().toISOString(),
     });
   });

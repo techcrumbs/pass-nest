@@ -20,9 +20,9 @@ let handlersRegistered = false;
 function createWindow(): BrowserWindow {
   return new BrowserWindow({
     width: 1024,
-    height: 720,
+    height: 780,
     minWidth: 900,
-    minHeight: 640,
+    minHeight: 700,
     title: 'PassNest',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -55,7 +55,7 @@ async function bootstrap(): Promise<void> {
   vaultService.tryTrustedDeviceUnlock();
 
   if (!handlersRegistered) {
-    registerAppHandlers(vaultService);
+    registerAppHandlers(vaultService, clipboardService);
     registerVaultHandlers(vaultService);
     registerProfileHandlers(profilesRepository, vaultSession);
     registerEntryHandlers({
