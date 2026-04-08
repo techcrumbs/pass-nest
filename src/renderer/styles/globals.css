@@ -41,12 +41,22 @@ body {
   margin: 0 auto;
 }
 
+.shell-auth {
+  min-height: calc(100vh - 64px);
+}
+
+.shell-unlocked {
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+}
+
 .hero {
   display: flex;
   justify-content: space-between;
   gap: 24px;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 4px;
 }
 
 .hero h1 {
@@ -59,14 +69,46 @@ body {
 .hero p {
   margin: 0;
   color: var(--muted);
-  max-width: 600px;
+  max-width: none;
   line-height: 1.5;
+  white-space: nowrap;
+}
+
+.shell-auth .hero {
+  margin-bottom: 0;
 }
 
 .panel-grid {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 20px;
+  margin-top: -10px;
+}
+
+.shell-unlocked .panel-grid {
+  flex: 1;
+  min-height: 0;
+}
+
+.shell-unlocked .panel-grid > aside,
+.shell-unlocked .panel-grid > section {
+  min-height: 0;
+}
+
+.shell-unlocked .panel-grid > aside {
+  overflow: auto;
+}
+
+.shell-unlocked .panel-grid > section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shell-unlocked .panel-grid > section > .stack:last-child {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .panel,
@@ -105,6 +147,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.shell-unlocked .list {
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .entry-row {
@@ -213,6 +260,13 @@ button:disabled {
   color: var(--danger);
 }
 
+.warning-callout {
+  background: rgba(201, 121, 52, 0.14);
+  color: #70401e;
+  border: 1px solid rgba(201, 121, 52, 0.22);
+  line-height: 1.5;
+}
+
 .checkbox {
   flex-direction: row;
   align-items: center;
@@ -226,11 +280,12 @@ button:disabled {
 .locked-screen,
 .setup-screen {
   max-width: 540px;
-  margin: 64px auto 0;
+  margin: 12px auto 28px;
 }
 
 @media (max-width: 900px) {
   #app {
+    height: auto;
     padding: 18px;
   }
 
@@ -240,5 +295,21 @@ button:disabled {
 
   .hero {
     flex-direction: column;
+  }
+
+  .hero p {
+    white-space: normal;
+  }
+
+  .panel-grid {
+    margin-top: 0;
+  }
+
+  .shell-unlocked {
+    height: auto;
+  }
+
+  .shell-auth {
+    min-height: auto;
   }
 }

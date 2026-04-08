@@ -54,26 +54,26 @@ function render() {
         return;
     }
     if (state.bootstrapStatus.kind === 'needs-setup') {
-        root.innerHTML = renderShell(renderSetupScreen());
+        root.innerHTML = renderShell(renderSetupScreen(), 'shell-auth');
         wireSetupScreen();
         return;
     }
     if (state.bootstrapStatus.kind === 'locked') {
-        root.innerHTML = renderShell(renderLockedScreen());
+        root.innerHTML = renderShell(renderLockedScreen(), 'shell-auth');
         wireLockedScreen();
         return;
     }
-    root.innerHTML = renderShell(renderUnlockedScreen());
+    root.innerHTML = renderShell(renderUnlockedScreen(), 'shell-unlocked');
     wireUnlockedScreen();
 }
-function renderShell(content) {
+function renderShell(content, extraClass = '') {
     const banner = state.error
         ? `<div class="message error">${escapeHtml(state.error)}</div>`
         : state.message
             ? `<div class="message">${escapeHtml(state.message)}</div>`
             : '';
     return `
-    <main class="shell">
+    <main class="shell ${extraClass}">
       <section class="hero">
         <div>
           <h1>PassNest</h1>
@@ -91,6 +91,9 @@ function renderSetupScreen() {
       <div class="stack">
         <h2>Create your vault</h2>
         <p>Your master password unlocks the vault key that protects saved entries. We never store raw passwords in SQLite.</p>
+        <div class="message warning-callout">
+          Copy or securely record your master password before continuing. If you lose it, PassNest cannot recover or reset it, and your saved passwords will remain inaccessible.
+        </div>
         <form id="setup-form" class="stack">
           <label>
             Master password
