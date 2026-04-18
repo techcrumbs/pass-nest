@@ -12,20 +12,33 @@ import { registerEntryHandlers } from './ipc/handlers/entries';
 import { registerProfileHandlers } from './ipc/handlers/profiles';
 import { registerVaultHandlers } from './ipc/handlers/vault';
 import { ClipboardService } from './platform/clipboard';
+import { getAppIcon, getAppIconPath } from './platform/app-icon';
+import { getPreloadScriptPath, getRendererHtmlPath } from './platform/runtime-paths';
 import { SafeStorageService } from './platform/safe-storage';
 import { VaultService } from './services/vault-service';
 
 let handlersRegistered = false;
 
+function applyAppIcon(): void {
+  const icon = getAppIcon();
+
+  if (icon && process.platform === 'darwin') {
+    app.dock?.setIcon(icon);
+  }
+}
+
 function createWindow(): BrowserWindow {
+  const icon = getAppIcon() ?? getAppIconPath() ?? undefined;
+
   return new BrowserWindow({
     width: 1024,
     height: 780,
     minWidth: 900,
     minHeight: 700,
     title: 'PassNest',
+    icon,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: getPreloadScriptPath(),
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
@@ -67,16 +80,20 @@ async function bootstrap(): Promise<void> {
   }
 
   const mainWindow = createWindow();
-  await mainWindow.loadFile(join(process.cwd(), 'src/renderer/index.html'));
+  await mainWindow.loadFile(getRendererHtmlPath());
 }
 
+applyAppIcon();
+
 app.whenReady().then(async () => {
+  applyAppIcon();
+
   await bootstrap();
 
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       const mainWindow = createWindow();
-      await mainWindow.loadFile(join(process.cwd(), 'src/renderer/index.html'));
+      await mainWindow.loadFile(getRendererHtmlPath());
     }
   });
 });
