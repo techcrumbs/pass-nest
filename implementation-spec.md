@@ -9,7 +9,7 @@ This spec assumes:
 - Greenfield repository
 - Electron as the desktop shell
 - TypeScript across main, preload, renderer, and shared code
-- SQLite stored at `~/.passnest/passnest.db`
+- SQLite stored at `~/.config/passnest-desktop/passnest.db`
 - `tags_json` for v1 instead of normalized tag tables
 - Master password required at setup
 - Optional trusted-device unlock only when OS secure storage is trustworthy
@@ -139,8 +139,8 @@ Contains shared DTOs, channel names, and input validation schemas that can be im
 Startup order:
 
 1. Electron app becomes ready
-2. Ensure `~/.passnest` exists
-3. Open SQLite database at `~/.passnest/passnest.db`
+2. Ensure `~/.config/passnest-desktop` exists
+3. Open SQLite database at `~/.config/passnest-desktop/passnest.db`
 4. Run pending migrations
 5. Initialize platform services:
    - clipboard service
@@ -170,7 +170,7 @@ The preload script is the only bridge between renderer and privileged APIs.
 
 Directory:
 
-- `~/.passnest/`
+- `~/.config/passnest-desktop/`
 
 Files:
 
@@ -855,7 +855,7 @@ Forbidden logs:
 
 ### Manual Verification
 
-- database created under `~/.passnest`
+- database created under `~/.config/passnest-desktop`
 - raw passwords are absent from SQLite
 - trusted-device unlock is disabled on weak backend
 - locking the vault blocks create, edit, delete, and copy actions

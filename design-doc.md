@@ -11,7 +11,7 @@ Core product requirements:
 - The UI shows only entries for the currently selected profile
 - Passwords are never displayed in plaintext in the UI
 - Users copy passwords through a copy-to-clipboard action only
-- Data is stored locally in a SQLite database under `~/.passnest`
+- Data is stored locally in a SQLite database under `~/.config/passnest-desktop`
 - Raw passwords must never be stored in the database
 
 ## Goals
@@ -71,7 +71,7 @@ Use a random vault key to encrypt all password entries. The user master password
 
 ## Data Storage Design
 
-PassNest stores app data in `~/.passnest/passnest.db`.
+PassNest stores app data in `~/.config/passnest-desktop/passnest.db`.
 
 ### SQLite Is Allowed To Store
 
@@ -256,7 +256,7 @@ On Linux, secure storage quality can vary depending on the available secret serv
 
 - Database access
 - Cryptographic operations
-- Filesystem setup under `~/.passnest`
+- Filesystem setup under `~/.config/passnest-desktop`
 - Clipboard copy operation
 - OS secure storage integration
 - IPC request validation
@@ -324,7 +324,7 @@ This keeps database access, decryption, and clipboard handling inside the privil
 ## Suggested MVP Build Order
 
 1. Scaffold Electron + TypeScript app
-2. Create app directory bootstrap under `~/.passnest`
+2. Create app directory bootstrap under `~/.config/passnest-desktop`
 3. Add SQLite connection and migrations
 4. Implement vault metadata and KDF setup
 5. Implement encryption and decryption services
@@ -347,7 +347,7 @@ These should be finalized before implementation starts:
 ## Recommended V1 Position
 
 - Use Electron + TypeScript
-- Use SQLite in `~/.passnest/passnest.db`
+- Use SQLite in `~/.config/passnest-desktop/passnest.db`
 - Encrypt password values with `AES-256-GCM`
 - Use `Argon2id` for master-password-based key derivation
 - Keep the master-password-wrapped vault key in SQLite as the canonical unlock path

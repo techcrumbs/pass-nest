@@ -9,7 +9,7 @@ export type AppPaths = {
 };
 
 export function getAppPaths(): AppPaths {
-  const rootDir = join(homedir(), '.passnest');
+  const rootDir = join(homedir(), '.config', 'passnest-desktop');
 
   return {
     rootDir,
