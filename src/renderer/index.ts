@@ -12,6 +12,7 @@ type AppState = {
   showCreateEntryForm: boolean;
   editingEntryId: string | null;
   message: string | null;
+  transientMessage: boolean;
   error: string | null;
 };
 
@@ -33,8 +34,10 @@ const state: AppState = {
   showCreateEntryForm: false,
   editingEntryId: null,
   message: null,
+  transientMessage: false,
   error: null,
 };
+let messageTimeoutId: number | null = null;
 
 void bootstrap();
 
@@ -116,7 +119,7 @@ function renderShell(content: string, extraClass = ''): string {
   const banner = state.error
     ? `<div class="message error">${escapeHtml(state.error)}</div>`
     : state.message
-      ? `<div class="message">${escapeHtml(state.message)}</div>`
+      ? `<div class="message${state.transientMessage ? ' transient' : ''}">${escapeHtml(state.message)}</div>`
       : '';
 
   return `
@@ -138,7 +141,7 @@ function renderSetupScreen(): string {
     <section class="card setup-screen">
       <div class="stack">
         <h2>Create your vault</h2>
-        <p>Your master password unlocks the vault key that protects saved entries. We never store raw passwords in SQLite.</p>
+        <p>Your master password unlocks the vault key that protects saved entries. We never store raw passwords.</p>
         <div class="message warning-callout">
           Copy or securely record your master password before continuing. If you lose it, PassNest cannot recover or reset it, and your saved passwords will remain inaccessible.
         </div>
@@ -678,7 +681,8 @@ function wireUnlockedScreen(): void {
       try {
         clearMessages();
         await window.passNest.entries.copyPassword({ id });
-        setMessage('Password copied to clipboard.');
+        const entryName = state.entries.find((entry) => entry.id === id)?.name ?? 'Password';
+        setMessage(`${entryName} password copied to clipboard`, 5000);
       } catch (error) {
         setError(toMessage(error));
       }
@@ -727,19 +731,48 @@ function wireUnlockedScreen(): void {
   }
 }
 
-function setMessage(message: string): void {
+function setMessage(message: string, durationMs?: number): void {
+  clearMessageTimeout();
   state.message = message;
+  state.transientMessage = typeof durationMs === 'number' && durationMs > 0;
   state.error = null;
+
+  if (!state.transientMessage) {
+    return;
+  }
+
+  messageTimeoutId = window.setTimeout(() => {
+    if (state.message !== message || !state.transientMessage) {
+      return;
+    }
+
+    state.message = null;
+    state.transientMessage = false;
+    render();
+  }, durationMs);
 }
 
 function setError(message: string): void {
+  clearMessageTimeout();
   state.error = message;
   state.message = null;
+  state.transientMessage = false;
 }
 
 function clearMessages(): void {
+  clearMessageTimeout();
   state.message = null;
+  state.transientMessage = false;
   state.error = null;
+}
+
+function clearMessageTimeout(): void {
+  if (messageTimeoutId === null) {
+    return;
+  }
+
+  window.clearTimeout(messageTimeoutId);
+  messageTimeoutId = null;
 }
 
 async function refreshProfilesAndSelection(preferredProfileId?: string): Promise<void> {
